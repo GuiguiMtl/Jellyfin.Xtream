@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -360,13 +361,17 @@ public partial class StreamService(IXtreamClient xtreamClient)
     /// <returns>A tuple of discovered VideoInfo and AudioInfo, or nulls if probe fails.</returns>
     public static async Task<(VideoInfo? Video, AudioInfo? Audio)> ProbeStreamAsync(string url, ILogger logger, CancellationToken cancellationToken)
     {
+        string ffprobePath = ResolveFfprobePath();
+        logger.LogDebug("Using ffprobe at {FfprobePath}", ffprobePath);
+
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(TimeSpan.FromSeconds(10));
 
+        bool started = false;
         using var process = new Process();
         process.StartInfo = new ProcessStartInfo
         {
-            FileName = "ffprobe",
+            FileName = ffprobePath,
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -384,6 +389,7 @@ public partial class StreamService(IXtreamClient xtreamClient)
         try
         {
             process.Start();
+            started = true;
             string output = await process.StandardOutput.ReadToEndAsync(timeoutCts.Token).ConfigureAwait(false);
             await process.WaitForExitAsync(timeoutCts.Token).ConfigureAwait(false);
 
@@ -430,29 +436,41 @@ public partial class StreamService(IXtreamClient xtreamClient)
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning("FFprobe timed out");
-            if (!process.HasExited)
-            {
-                process.Kill(true);
-            }
-
+            KillProcess(process, started);
             return (null, null);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogWarning(ex, "FFprobe failed");
+            KillProcess(process, started);
+            return (null, null);
+        }
+    }
+
+    private static string ResolveFfprobePath()
+    {
+        // Prefer Jellyfin's bundled ffprobe, fall back to PATH.
+        const string jellyfinFfprobe = "/usr/lib/jellyfin-ffmpeg/ffprobe";
+        return File.Exists(jellyfinFfprobe) ? jellyfinFfprobe : "ffprobe";
+    }
+
+    private static void KillProcess(Process process, bool started)
+    {
+        if (!started)
+        {
+            return;
+        }
+
+        try
+        {
             if (!process.HasExited)
             {
-                try
-                {
-                    process.Kill(true);
-                }
-                catch (InvalidOperationException)
-                {
-                    // Process already exited between HasExited check and Kill call.
-                }
+                process.Kill(true);
             }
-
-            return (null, null);
+        }
+        catch (InvalidOperationException)
+        {
+            // Process already exited between HasExited check and Kill call.
         }
     }
 
