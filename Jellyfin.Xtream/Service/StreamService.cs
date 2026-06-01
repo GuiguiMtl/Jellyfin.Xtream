@@ -395,46 +395,55 @@ public partial class StreamService(IXtreamClient xtreamClient)
         }
 
         bool isLive = type == StreamType.Live;
+
+        List<MediaStream> mediaStreams = [];
+        if (videoInfo != null)
+        {
+            mediaStreams.Add(new()
+            {
+                AspectRatio = videoInfo.AspectRatio,
+                BitDepth = videoInfo.BitsPerRawSample,
+                Codec = videoInfo.CodecName,
+                ColorPrimaries = videoInfo.ColorPrimaries,
+                ColorRange = videoInfo.ColorRange,
+                ColorSpace = videoInfo.ColorSpace,
+                ColorTransfer = videoInfo.ColorTransfer,
+                Height = videoInfo.Height,
+                Index = videoInfo.Index,
+                IsAVC = videoInfo.IsAVC,
+                IsInterlaced = false,
+                Level = videoInfo.Level,
+                PixelFormat = videoInfo.PixelFormat,
+                Profile = videoInfo.Profile,
+                Type = MediaStreamType.Video,
+                Width = videoInfo.Width,
+            });
+        }
+
+        if (audioInfo != null)
+        {
+            mediaStreams.Add(new()
+            {
+                BitRate = audioInfo.Bitrate,
+                ChannelLayout = audioInfo.ChannelLayout,
+                Channels = audioInfo.Channels,
+                Codec = audioInfo.CodecName,
+                Index = audioInfo.Index,
+                Profile = audioInfo.Profile,
+                SampleRate = audioInfo.SampleRate,
+                Type = MediaStreamType.Audio,
+            });
+        }
+
         return new MediaSourceInfo()
         {
-            Container = extension,
+            AnalyzeDurationMs = isLive ? 5000 : 0,
+            Container = isLive && string.IsNullOrEmpty(extension) ? "ts" : extension,
             EncoderProtocol = MediaProtocol.Http,
             Id = ToGuid(MediaSourcePrefix, (int)type, id, 0).ToString(),
             IsInfiniteStream = isLive,
             IsRemote = true,
-            MediaStreams =
-            [
-                new()
-                {
-                    AspectRatio = videoInfo?.AspectRatio,
-                    BitDepth = videoInfo?.BitsPerRawSample,
-                    Codec = videoInfo?.CodecName,
-                    ColorPrimaries = videoInfo?.ColorPrimaries,
-                    ColorRange = videoInfo?.ColorRange,
-                    ColorSpace = videoInfo?.ColorSpace,
-                    ColorTransfer = videoInfo?.ColorTransfer,
-                    Height = videoInfo?.Height,
-                    Index = videoInfo?.Index ?? -1,
-                    IsAVC = videoInfo?.IsAVC,
-                    IsInterlaced = true,
-                    Level = videoInfo?.Level,
-                    PixelFormat = videoInfo?.PixelFormat,
-                    Profile = videoInfo?.Profile,
-                    Type = MediaStreamType.Video,
-                    Width = videoInfo?.Width,
-                },
-                new()
-                {
-                    BitRate = audioInfo?.Bitrate,
-                    ChannelLayout = audioInfo?.ChannelLayout,
-                    Channels = audioInfo?.Channels,
-                    Codec = audioInfo?.CodecName,
-                    Index = audioInfo?.Index ?? -1,
-                    Profile = audioInfo?.Profile,
-                    SampleRate = audioInfo?.SampleRate,
-                    Type = MediaStreamType.Audio,
-                }
-            ],
+            MediaStreams = mediaStreams,
             Name = "default",
             Path = uri,
             Protocol = MediaProtocol.Http,
