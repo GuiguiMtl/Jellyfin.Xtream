@@ -1,0 +1,69 @@
+# Configuration for Release Drafter: https://github.com/release-drafter/release-drafter
+# Based on jellyfin-meta-plugins base config (can't use _extends since this is a fork outside the jellyfin org)
+name-template: 'Version $NEXT_MAJOR_VERSION'
+tag-template: 'v$NEXT_MAJOR_VERSION'
+version-template: '$MAJOR'
+category-template: '### $TITLE'
+
+categories:
+  - title: ':boom: Breaking changes'
+    labels:
+      - breaking
+  - title: ':fire: Removed'
+    labels:
+      - removed
+  - title: ':rewind: Reverted Changes'
+    labels:
+      - revert
+      - reverted
+  - title: ':rocket: Major features and improvements'
+    labels:
+      - major-enhancement
+      - major-feature
+  - title: ':ambulance: Major bug fixes'
+    labels:
+      - major-bug
+  - title: ':wastebasket:️ Deprecated'
+    labels:
+      - deprecated
+  - title: ':tada: New features and improvements'
+    labels:
+      - enhancement
+      - feature
+  - title: ':bug: Bug Fixes'
+    labels:
+      - bug
+      - fix
+      - bugfix
+      - regression
+  - title: ':white_check_mark: Tests'
+    labels:
+      - test
+      - tests
+  - title: ':gear: Code or Repo Maintenance'
+    labels:
+      - chore
+      - cleanup
+  - title: ':memo: Documentation updates'
+    labels:
+      - documentation
+  - title: ':arrow_up: Dependency updates'
+    labels:
+      - dependencies
+      - dependency
+  - title: ':construction_worker: CI & build changes'
+    labels:
+      - ci
+      - build
+
+exclude-labels:
+  - no-changelog
+  - skip-changelog
+  - invalid
+
+template: |
+  <!-- Optional: add a release summary here -->
+
+  ## :sparkles: What's New
+
+  $CHANGES
