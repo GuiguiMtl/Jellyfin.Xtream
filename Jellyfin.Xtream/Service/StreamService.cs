@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -27,6 +28,8 @@ using MediaBrowser.Controller.Channels;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.MediaInfo;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 
 namespace Jellyfin.Xtream.Service;
 
@@ -349,6 +352,111 @@ public partial class StreamService(IXtreamClient xtreamClient)
     }
 
     /// <summary>
+    /// Probes a stream URL using FFprobe to discover video and audio codec information.
+    /// </summary>
+    /// <param name="url">The stream URL to probe.</param>
+    /// <param name="logger">Logger for diagnostic output.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A tuple of discovered VideoInfo and AudioInfo, or nulls if probe fails.</returns>
+    public static async Task<(VideoInfo? Video, AudioInfo? Audio)> ProbeStreamAsync(string url, ILogger logger, CancellationToken cancellationToken)
+    {
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(10));
+
+        using var process = new Process();
+        process.StartInfo = new ProcessStartInfo
+        {
+            FileName = "ffprobe",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+        process.StartInfo.ArgumentList.Add("-v");
+        process.StartInfo.ArgumentList.Add("quiet");
+        process.StartInfo.ArgumentList.Add("-print_format");
+        process.StartInfo.ArgumentList.Add("json");
+        process.StartInfo.ArgumentList.Add("-show_streams");
+        process.StartInfo.ArgumentList.Add("-analyzeduration");
+        process.StartInfo.ArgumentList.Add("5000000");
+        process.StartInfo.ArgumentList.Add(url);
+
+        try
+        {
+            process.Start();
+            string output = await process.StandardOutput.ReadToEndAsync(timeoutCts.Token).ConfigureAwait(false);
+            await process.WaitForExitAsync(timeoutCts.Token).ConfigureAwait(false);
+
+            if (process.ExitCode != 0)
+            {
+                logger.LogWarning("FFprobe exited with code {ExitCode}", process.ExitCode);
+                return (null, null);
+            }
+
+            JObject result = JObject.Parse(output);
+            if (result["streams"] is not JArray streams)
+            {
+                return (null, null);
+            }
+
+            VideoInfo? videoInfo = null;
+            AudioInfo? audioInfo = null;
+
+            foreach (JToken stream in streams)
+            {
+                string? codecType = stream["codec_type"]?.Value<string>();
+                if (codecType == "video" && videoInfo == null)
+                {
+                    videoInfo = stream.ToObject<VideoInfo>();
+                }
+                else if (codecType == "audio" && audioInfo == null)
+                {
+                    audioInfo = stream.ToObject<AudioInfo>();
+                }
+            }
+
+            if (videoInfo != null)
+            {
+                logger.LogInformation("FFprobe detected video: {Codec} {Width}x{Height}", videoInfo.CodecName, videoInfo.Width, videoInfo.Height);
+            }
+
+            if (audioInfo != null)
+            {
+                logger.LogInformation("FFprobe detected audio: {Codec} {Channels}ch", audioInfo.CodecName, audioInfo.Channels);
+            }
+
+            return (videoInfo, audioInfo);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogWarning("FFprobe timed out");
+            if (!process.HasExited)
+            {
+                process.Kill(true);
+            }
+
+            return (null, null);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "FFprobe failed");
+            if (!process.HasExited)
+            {
+                try
+                {
+                    process.Kill(true);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Process already exited between HasExited check and Kill call.
+                }
+            }
+
+            return (null, null);
+        }
+    }
+
+    /// <summary>
     /// Gets the media source information for the given Xtream stream.
     /// </summary>
     /// <param name="type">The stream media type.</param>
@@ -451,7 +559,7 @@ public partial class StreamService(IXtreamClient xtreamClient)
             RequiresOpening = restream,
             SupportsDirectPlay = true,
             SupportsDirectStream = true,
-            SupportsProbing = true,
+            SupportsProbing = !(isLive && (videoInfo != null || audioInfo != null)),
         };
     }
 
