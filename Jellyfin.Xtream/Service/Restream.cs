@@ -62,13 +62,14 @@ public class Restream : ILiveStream, IDirectStreamProvider, IDisposable
     /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
     /// <param name="mediaSource">The media which must be restreamed.</param>
-    public Restream(IServerApplicationHost appHost, IHttpClientFactory httpClientFactory, ILogger logger, MediaSourceInfo mediaSource)
+    /// <param name="bufferSizeMiB">The ring buffer size in MiB.</param>
+    public Restream(IServerApplicationHost appHost, IHttpClientFactory httpClientFactory, ILogger logger, MediaSourceInfo mediaSource, int bufferSizeMiB = 64)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         MediaSource = mediaSource;
 
-        _buffer = new WrappedBufferStream(16 * 1024 * 1024); // 16MiB
+        _buffer = new WrappedBufferStream(bufferSizeMiB * 1024 * 1024);
         _tokenSource = new CancellationTokenSource();
 
         OriginalStreamId = MediaSource.Id;
@@ -162,7 +163,7 @@ public class Restream : ILiveStream, IDirectStreamProvider, IDisposable
         }
 
         _logger.LogInformation("Opening restream {Count} for channel {ChannelId}.", ConsumerCount, MediaSource.Id);
-        return new WrappedBufferReadStream(_buffer);
+        return new WrappedBufferReadStream(_buffer, _logger);
     }
 
     /// <summary>

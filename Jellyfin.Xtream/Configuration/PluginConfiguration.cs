@@ -83,5 +83,11 @@ public class PluginConfiguration : BasePluginConfiguration
     /// Gets or sets the channel override configuration for Live TV.
     /// </summary>
     public SerializableDictionary<int, ChannelOverrides> LiveTvOverrides { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the restream ring buffer size in MiB.
+    /// A larger buffer helps prevent stream drops during hardware encoder initialization pauses.
+    /// </summary>
+    public int BufferSizeMiB { get; set; } = 64;
 }
 #pragma warning restore CA2227

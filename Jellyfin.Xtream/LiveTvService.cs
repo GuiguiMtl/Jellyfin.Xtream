@@ -219,7 +219,7 @@ public class LiveTvService(IServerApplicationHost appHost, IHttpClientFactory ht
 
         if (stream == null)
         {
-            stream = new Restream(appHost, httpClientFactory, logger, mediaSourceInfo);
+            stream = new Restream(appHost, httpClientFactory, logger, mediaSourceInfo, plugin.Configuration.BufferSizeMiB);
             await stream.Open(cancellationToken).ConfigureAwait(false);
         }
 

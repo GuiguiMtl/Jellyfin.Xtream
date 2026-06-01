@@ -16,6 +16,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Xtream.Service;
 
@@ -25,6 +26,7 @@ namespace Jellyfin.Xtream.Service;
 public class WrappedBufferReadStream : Stream
 {
     private readonly WrappedBufferStream _sourceBuffer;
+    private readonly ILogger _logger;
 
     private readonly long _initialReadHead;
 
@@ -32,9 +34,11 @@ public class WrappedBufferReadStream : Stream
     /// Initializes a new instance of the <see cref="WrappedBufferReadStream"/> class.
     /// </summary>
     /// <param name="sourceBuffer">The source buffer to read from.</param>
-    public WrappedBufferReadStream(WrappedBufferStream sourceBuffer)
+    /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
+    public WrappedBufferReadStream(WrappedBufferStream sourceBuffer, ILogger logger)
     {
         _sourceBuffer = sourceBuffer;
+        _logger = logger;
         _initialReadHead = Math.Max(0, sourceBuffer.TotalBytesWritten - (sourceBuffer.BufferSize / 2));
         ReadHead = _initialReadHead;
     }
@@ -83,11 +87,11 @@ public class WrappedBufferReadStream : Stream
 
         if (gap > _sourceBuffer.BufferSize)
         {
-            // TODO: design good handling method.
-            // Options:
-            // - throw exception
-            // - skip to buffer.Position+1 to only read 'up-to-date' bytes.
-            throw new IOException("Reader cannot keep up");
+            // Skip forward to recover — causes a brief glitch but keeps the stream alive.
+            long skippedBytes = gap - (_sourceBuffer.BufferSize / 2);
+            _logger.LogWarning("Reader cannot keep up, skipping forward {SkippedBytes} bytes to recover.", skippedBytes);
+            ReadHead = _sourceBuffer.TotalBytesWritten - (_sourceBuffer.BufferSize / 2);
+            gap = _sourceBuffer.TotalBytesWritten - ReadHead;
         }
 
         // The number of bytes that can be copied.
