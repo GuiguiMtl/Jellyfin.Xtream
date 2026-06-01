@@ -8,6 +8,14 @@
     "owner": "Kevinjil",
     "versions": [
       {
+        "changelog": "### Bug Fixes\n\n- **Fix live TV codec mismatch causing FFmpeg failures**: Conditionally populate MediaStreams so live TV streams get an empty list, letting Jellyfin's probe discover codecs without bias (fixes `aac_adtstoasc` errors with EAC3 streams)\n- Set explicit `Container=ts` and `AnalyzeDurationMs=5000` for live streams to improve probe accuracy\n- Remove hardcoded `IsInterlaced=true` — let the probe determine interlacing",
+        "checksum": "acc0ca1b72a305ea5f46f4d826aeb7ac",
+        "sourceUrl": "https://github.com/GuiguiMtl/Jellyfin.Xtream/releases/download/v0.9.1/jellyfin-xtream_0.9.0.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-06-01T21:52:48Z",
+        "version": "0.9.0.0"
+      },
+      {
         "changelog": "## Fix buffer overflow causing random live TV stream drops\n\n- Increase default ring buffer from 16 MiB to 64 MiB\n- Add configurable buffer size setting (16-512 MiB) in plugin config UI\n- Recover from buffer overflows by skipping forward instead of crashing (replaces the `IOException: Reader cannot keep up` crash with a skip-forward recovery that causes a brief video glitch but keeps the stream alive)\n- Fix CI workflows for forked repository",
         "checksum": "03b31e2efd16c32f0b87f853e707cfe3",
         "sourceUrl": "https://github.com/GuiguiMtl/Jellyfin.Xtream/releases/download/v0.9.0/jellyfin-xtream_0.9.0.0.zip",
