@@ -8,6 +8,14 @@
     "owner": "Kevinjil",
     "versions": [
       {
+        "changelog": "### Bug Fixes\n\n- **Fix ffprobe path**: Resolve ffprobe from Jellyfin's bundled path (`/usr/lib/jellyfin-ffmpeg/ffprobe`) with fallback to PATH\n- **Fix crash on missing binary**: Guard against `InvalidOperationException` when `process.Start()` fails (e.g. ffprobe not found) — previously crashed the entire live TV request",
+        "checksum": "237231a4f3b69526e8f832c549c6eb73",
+        "sourceUrl": "https://github.com/GuiguiMtl/Jellyfin.Xtream/releases/download/v0.9.3/jellyfin-xtream_0.9.3.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-06-01T22:47:51Z",
+        "version": "0.9.3.0"
+      },
+      {
         "changelog": "### Plugin-side FFprobe for live TV streams\n\nFixes live TV codec mismatch causing FFmpeg failures (e.g. `aac_adtstoasc` errors with EAC3 streams, 0x0 resolution from stale probe cache).\n\n- Probe Xtream source URL with FFprobe before creating `MediaSourceInfo`, providing accurate codec info directly to Jellyfin\n- Set `SupportsProbing=false` when probe data is available, bypassing Jellyfin's stale cached probe results\n- 5s analyze duration with 10s timeout for reliable codec detection\n- Graceful fallback to Jellyfin's built-in probing if FFprobe fails or times out",
         "checksum": "3476a2e7a0e163ea0181ba7f00b9e475",
         "sourceUrl": "https://github.com/GuiguiMtl/Jellyfin.Xtream/releases/download/v0.9.2/jellyfin-xtream_0.9.2.0.zip",
