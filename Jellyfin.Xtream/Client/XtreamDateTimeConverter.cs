@@ -99,7 +99,7 @@ public class XtreamDateTimeConverter : JsonConverter
         int len = value.Length;
 
         // "Z" suffix (UTC)
-        if (value.EndsWith("Z", StringComparison.OrdinalIgnoreCase))
+        if (value.EndsWith('Z') || value.EndsWith('z'))
         {
             return true;
         }
@@ -132,7 +132,7 @@ public class XtreamDateTimeConverter : JsonConverter
 
     /// <summary>
     /// Converts a "[+-]HHMM" offset suffix (no colon) to "[+-]HH:MM" so that
-    /// <see cref="DateTimeOffset.TryParse"/> and <see cref="DateTimeOffset.TryParseExact"/> can handle it.
+    /// standard <see cref="DateTimeOffset"/> parsing methods can handle it.
     /// Strings already in "[+-]HH:MM" form are returned unchanged.
     /// </summary>
     private static string NormalizeOffset(string value)
