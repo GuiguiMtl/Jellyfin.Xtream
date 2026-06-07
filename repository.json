@@ -8,6 +8,14 @@
     "owner": "Kevinjil",
     "versions": [
       {
+        "changelog": "### Bug Fixes\n\nFixes live TV channels that failed to load after restarting a stream (stale probe data served from a reused/zombie restream).\n\n- **Discard dead restreams**: zombie restreams (whose upstream copy task has finished) are now closed and removed instead of being reused with stale cached probe data\n- **Refresh probe data on reuse**: when reusing a live restream, the freshly probed codec info (`MediaStreams`, `Container`, `AnalyzeDurationMs`, `SupportsProbing`) is refreshed so a previously cached probe (e.g. 0x0 resolution or wrong codec) never wins\n- **Raise FFprobe timeout** to 20s to reduce probe-timeout fallbacks that re-triggered the stale-cache trap",
+        "checksum": "30fc0a28c69007b5056c4d9195aca709",
+        "sourceUrl": "https://github.com/GuiguiMtl/Jellyfin.Xtream/releases/download/v0.9.4/jellyfin-xtream_0.9.4.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-06-07T02:04:52Z",
+        "version": "0.9.4.0"
+      },
+      {
         "changelog": "### Bug Fixes\n\n- **Fix ffprobe path**: Resolve ffprobe from Jellyfin's bundled path (`/usr/lib/jellyfin-ffmpeg/ffprobe`) with fallback to PATH\n- **Fix crash on missing binary**: Guard against `InvalidOperationException` when `process.Start()` fails (e.g. ffprobe not found) — previously crashed the entire live TV request",
         "checksum": "237231a4f3b69526e8f832c549c6eb73",
         "sourceUrl": "https://github.com/GuiguiMtl/Jellyfin.Xtream/releases/download/v0.9.3/jellyfin-xtream_0.9.3.0.zip",
