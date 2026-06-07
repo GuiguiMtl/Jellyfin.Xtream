@@ -39,8 +39,13 @@ public class EpgInfo
     [JsonProperty("start_timestamp")]
     public DateTime Start { get; set; }
 
+    [JsonConverter(typeof(XtreamDateTimeConverter))]
     [JsonProperty("start")]
-    public DateTime StartLocalTime { get; set; }
+    public DateTimeOffset? StartLocalTime { get; set; }
+
+    [JsonConverter(typeof(XtreamDateTimeConverter))]
+    [JsonProperty("end")]
+    public DateTimeOffset? EndLocalTime { get; set; }
 
     [JsonConverter(typeof(UnixDateTimeConverter))]
     [JsonProperty("stop_timestamp")]

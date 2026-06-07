@@ -181,8 +181,8 @@ public class LiveTvService(IServerApplicationHost appHost, IHttpClientFactory ht
                     {
                         Id = StreamService.ToGuid(StreamService.EpgPrefix, streamId, epg.Id, 0).ToString(),
                         ChannelId = channelId,
-                        StartDate = epg.Start,
-                        EndDate = epg.End,
+                        StartDate = epg.StartLocalTime?.UtcDateTime ?? epg.Start,
+                        EndDate = epg.EndLocalTime?.UtcDateTime ?? epg.End,
                         Name = epg.Title,
                         Overview = epg.Description,
                     });
