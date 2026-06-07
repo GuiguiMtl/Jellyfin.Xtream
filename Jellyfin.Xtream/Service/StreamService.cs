@@ -364,8 +364,11 @@ public partial class StreamService(IXtreamClient xtreamClient)
         string ffprobePath = ResolveFfprobePath();
         logger.LogDebug("Using ffprobe at {FfprobePath}", ffprobePath);
 
+        // Allow a generous timeout: probing a live IPTV source often opens a second concurrent
+        // upstream connection, which can be slow to start delivering data. A short timeout caused
+        // the probe to fail and fall back to Jellyfin's stale-cache-prone path.
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(TimeSpan.FromSeconds(10));
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(20));
 
         bool started = false;
         using var process = new Process();

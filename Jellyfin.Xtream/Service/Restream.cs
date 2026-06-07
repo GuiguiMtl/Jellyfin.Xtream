@@ -94,6 +94,13 @@ public class Restream : ILiveStream, IDirectStreamProvider, IDisposable
     /// <inheritdoc />
     public bool EnableStreamSharing => true;
 
+    /// <summary>
+    /// Gets a value indicating whether the restream is currently open and actively copying data.
+    /// Once the upstream copy task finishes, the input stream is cleared and this becomes <c>false</c>,
+    /// marking the restream as a zombie that must not be reused.
+    /// </summary>
+    public bool IsOpen => _inputStream != null;
+
     /// <inheritdoc />
     public MediaSourceInfo MediaSource { get; set; }
 

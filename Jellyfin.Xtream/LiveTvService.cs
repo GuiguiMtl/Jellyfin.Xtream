@@ -220,10 +220,38 @@ public class LiveTvService(IServerApplicationHost appHost, IHttpClientFactory ht
         MediaSourceInfo mediaSourceInfo = plugin.StreamService.GetMediaSourceInfo(StreamType.Live, channel, restream: true, videoInfo: videoInfo, audioInfo: audioInfo);
         ILiveStream? stream = currentLiveStreams.Find(stream => stream.TunerHostId == Restream.TunerHost && stream.MediaSource.Id == mediaSourceInfo.Id);
 
+        // A dead/zombie restream (its upstream copy task has finished) must not be reused: it keeps
+        // serving stale, previously cached probe data. Close and remove it so a fresh one is opened.
+        if (stream is Restream dead && !dead.IsOpen)
+        {
+            logger.LogInformation("Discarding dead restream for channel {ChannelId}.", mediaSourceInfo.Id);
+            currentLiveStreams.Remove(stream);
+            try
+            {
+                await dead.Close().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to close dead restream for channel {ChannelId}.", mediaSourceInfo.Id);
+            }
+
+            stream = null;
+        }
+
         if (stream == null)
         {
             stream = new Restream(appHost, httpClientFactory, logger, mediaSourceInfo, plugin.Configuration.BufferSizeMiB);
             await stream.Open(cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            // Reuse the live restream, but refresh the freshly probed metadata so a previously
+            // cached probe (e.g. 0x0 resolution or wrong codec) never wins over the new one.
+            // Only the probe-derived fields are updated; the restream's rewritten Path/Id are kept.
+            stream.MediaSource.MediaStreams = mediaSourceInfo.MediaStreams;
+            stream.MediaSource.Container = mediaSourceInfo.Container;
+            stream.MediaSource.AnalyzeDurationMs = mediaSourceInfo.AnalyzeDurationMs;
+            stream.MediaSource.SupportsProbing = mediaSourceInfo.SupportsProbing;
         }
 
         stream.ConsumerCount++;
