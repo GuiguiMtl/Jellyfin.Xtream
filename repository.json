@@ -8,6 +8,14 @@
     "owner": "Kevinjil",
     "versions": [
       {
+        "changelog": "Fix EPG timezone offset ignored in program guide\n>> \n>> Some Xtream providers include an explicit timezone offset in the string form of EPG timestamps (e.g. \\20240115180000 +0200\\ or \\2024-01-15 18:00:00 +0200\\) but compute the \\start_timestamp\\ Unix field without applying that offset, effectively treating local time as UTC. This caused every program to appear shifted by the UTC offset (e.g. 2 h late for a +0200 provider).\n>> \n>> ### Changes\n>> - **New \\XtreamDateTimeConverter\\**: parses timezone-aware EPG datetime strings in ISO 8601 and XMLTV compact formats, normalising the no-colon offset form (\\+0200\\ → \\+02:00\\). Returns \\\null\\ when no explicit offset is present so the Unix timestamp fallback is used unchanged.\n>> - **\\EpgInfo\\**: \\StartLocalTime\\ and new \\EndLocalTime\\ are now \\DateTimeOffset?\\, wired to the \\start\\/\\\u001bnd\\ JSON fields via the new converter.\n>> - **\\LiveTvService\\**: \\StartDate\\/\\EndDate\\ now prefer \\StartLocalTime?.UtcDateTime\\ / \\EndLocalTime?.UtcDateTime\\ over the raw Unix timestamps; falls back to the Unix fields for providers that omit timezone info (no behaviour change for those providers).",
+        "checksum": "fcfa0b7c27fcca4009091f8f2e9dbdff",
+        "sourceUrl": "https://github.com/GuiguiMtl/Jellyfin.Xtream/releases/download/v0.9.5/jellyfin-xtream_0.9.5.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-06-07T03:28:25Z",
+        "version": "0.9.5.0"
+      },
+      {
         "changelog": "### Bug Fixes\n\nFixes live TV channels that failed to load after restarting a stream (stale probe data served from a reused/zombie restream).\n\n- **Discard dead restreams**: zombie restreams (whose upstream copy task has finished) are now closed and removed instead of being reused with stale cached probe data\n- **Refresh probe data on reuse**: when reusing a live restream, the freshly probed codec info (`MediaStreams`, `Container`, `AnalyzeDurationMs`, `SupportsProbing`) is refreshed so a previously cached probe (e.g. 0x0 resolution or wrong codec) never wins\n- **Raise FFprobe timeout** to 20s to reduce probe-timeout fallbacks that re-triggered the stale-cache trap",
         "checksum": "30fc0a28c69007b5056c4d9195aca709",
         "sourceUrl": "https://github.com/GuiguiMtl/Jellyfin.Xtream/releases/download/v0.9.4/jellyfin-xtream_0.9.4.0.zip",
